@@ -5,21 +5,24 @@ workflows:
     environment:
       java: 17
     scripts:
-      - name: Generate Gradle wrapper (isolated)
+      - name: Generate Gradle wrapper
         script: |
-          # Generate the wrapper in a temp dir that has a MINIMAL, plugin-free
-          # Gradle build, so wrapper creation never evaluates the Android plugins.
+          set -e
           mkdir -p /tmp/wrapgen
-          cd /tmp/wrapgen
-          echo "rootProject.name = \"wrapgen\"" > settings.gradle.kts
-          gradle wrapper --gradle-version 8.7 --no-daemon
-          # Copy the generated wrapper into the real repo root.
+          printf 'rootProject.name = "wrapgen"\n' > /tmp/wrapgen/settings.gradle.kts
+          echo "=== temp dir contents before wrapper ==="
+          ls -la /tmp/wrapgen
+          ( cd /tmp/wrapgen && gradle wrapper --gradle-version 8.7 --no-daemon )
+          echo "=== temp dir contents after wrapper ==="
+          ls -la /tmp/wrapgen
           cp -R /tmp/wrapgen/gradle "$CM_BUILD_DIR/gradle"
           cp /tmp/wrapgen/gradlew "$CM_BUILD_DIR/gradlew"
-          cp /tmp/wrapgen/gradlew.bat "$CM_BUILD_DIR/gradlew.bat" || true
           chmod +x "$CM_BUILD_DIR/gradlew"
+          echo "=== repo root after copy ==="
+          ls -la "$CM_BUILD_DIR"
       - name: Build debug APK
         script: |
+          set -e
           cd "$CM_BUILD_DIR"
           ./gradlew assembleDebug --stacktrace --no-daemon
     artifacts:
