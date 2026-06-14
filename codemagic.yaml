@@ -5,12 +5,22 @@ workflows:
     environment:
       java: 17
     scripts:
-      - name: Generate Gradle wrapper
+      - name: Generate Gradle wrapper (isolated)
         script: |
-          gradle wrapper --gradle-version 8.7
+          # Generate the wrapper in an empty directory so Gradle does NOT
+          # evaluate the Android build script during wrapper creation.
+          mkdir -p /tmp/wrapgen
+          cd /tmp/wrapgen
+          gradle wrapper --gradle-version 8.7 --no-daemon
+          # Copy the generated wrapper into the repo root.
+          cd "$CM_BUILD_DIR"
+          cp -R /tmp/wrapgen/gradle "$CM_BUILD_DIR/gradle"
+          cp /tmp/wrapgen/gradlew "$CM_BUILD_DIR/gradlew"
+          cp /tmp/wrapgen/gradlew.bat "$CM_BUILD_DIR/gradlew.bat" || true
+          chmod +x "$CM_BUILD_DIR/gradlew"
       - name: Build debug APK
         script: |
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --stacktrace --no-daemon
     artifacts:
       - app/build/outputs/apk/**/*.apk
     publishing:
