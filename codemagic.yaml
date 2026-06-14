@@ -5,21 +5,27 @@ workflows:
     environment:
       java: 17
     scripts:
+      - name: Show repo layout
+        script: |
+          echo "=== repo root: $CM_BUILD_DIR ==="
+          ls -la "$CM_BUILD_DIR"
+          echo "=== settings.gradle.kts content ==="
+          cat "$CM_BUILD_DIR/settings.gradle.kts" || echo "NO settings.gradle.kts AT ROOT"
+          echo "=== root build.gradle.kts content ==="
+          cat "$CM_BUILD_DIR/build.gradle.kts" || echo "NO build.gradle.kts AT ROOT"
+          echo "=== app/build.gradle.kts content ==="
+          cat "$CM_BUILD_DIR/app/build.gradle.kts" || echo "NO app/build.gradle.kts"
+          echo "=== full file tree (no .git) ==="
+          find "$CM_BUILD_DIR" -not -path '*/.git/*' -type f | sort
       - name: Generate Gradle wrapper
         script: |
           set -e
           mkdir -p /tmp/wrapgen
           printf 'rootProject.name = "wrapgen"\n' > /tmp/wrapgen/settings.gradle.kts
-          echo "=== temp dir contents before wrapper ==="
-          ls -la /tmp/wrapgen
           ( cd /tmp/wrapgen && gradle wrapper --gradle-version 8.7 --no-daemon )
-          echo "=== temp dir contents after wrapper ==="
-          ls -la /tmp/wrapgen
           cp -R /tmp/wrapgen/gradle "$CM_BUILD_DIR/gradle"
           cp /tmp/wrapgen/gradlew "$CM_BUILD_DIR/gradlew"
           chmod +x "$CM_BUILD_DIR/gradlew"
-          echo "=== repo root after copy ==="
-          ls -la "$CM_BUILD_DIR"
       - name: Build debug APK
         script: |
           set -e
