@@ -8,7 +8,8 @@ data class SmsEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val sender: String,
     val body: String,
-    val smsTimestamp: Long,   // millis from the SMS itself
+    val smsTimestamp: Long,   // millis from the SMS itself (SmsMessage.date) — the dedup key
     val receivedAt: Long,     // millis we received it
-    val sent: Boolean = false
+    val sent: Boolean = false,
+    val sentAt: Long? = null  // millis we successfully forwarded it; null until sent
 )

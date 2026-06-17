@@ -33,18 +33,30 @@ class ForwardWorker(
         val pending = dao.pending()
         if (pending.isEmpty()) return@withContext Result.success()
 
-        var anyFailed = false
+        var anyRetryable = false
         for (sms in pending) {
-            val ok = post(url, prefs.deviceId, sms)
-            if (ok) dao.markSent(sms.id) else anyFailed = true
+            when (post(url, prefs.deviceId, sms)) {
+                // 2xx: inserted or duplicate — it landed. Mark sent.
+                PostResult.LANDED -> dao.markSent(sms.id, System.currentTimeMillis())
+                // 400: malformed — retrying forever won't help. Dead-letter by
+                // marking sent so it leaves the queue (logged below). It will not
+                // re-enter via the sweep because the sweep skips messages we hold.
+                PostResult.DEAD_LETTER -> dao.markSent(sms.id, System.currentTimeMillis())
+                // 401: bad/inactive token — pause; merchant must fix the URL.
+                // Don't mark sent; let the queue hold until config is corrected.
+                PostResult.AUTH_FAIL -> anyRetryable = true
+                // 5xx / network: transient — retry with backoff.
+                PostResult.TRANSIENT -> anyRetryable = true
+            }
         }
         dao.purgeSent()
 
-        // If anything failed, ask WorkManager to retry with backoff.
-        if (anyFailed) Result.retry() else Result.success()
+        if (anyRetryable) Result.retry() else Result.success()
     }
 
-    private fun post(url: String, deviceId: String, sms: SmsEntity): Boolean {
+    private enum class PostResult { LANDED, DEAD_LETTER, AUTH_FAIL, TRANSIENT }
+
+    private fun post(url: String, deviceId: String, sms: SmsEntity): PostResult {
         return try {
             val payload = JSONObject().apply {
                 put("device_id", deviceId)
@@ -64,9 +76,14 @@ class ForwardWorker(
             conn.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
             val code = conn.responseCode
             conn.disconnect()
-            code in 200..299
+            when {
+                code in 200..299 -> PostResult.LANDED
+                code == 400 -> PostResult.DEAD_LETTER
+                code == 401 -> PostResult.AUTH_FAIL
+                else -> PostResult.TRANSIENT   // includes 5xx and anything unexpected
+            }
         } catch (e: Exception) {
-            false
+            PostResult.TRANSIENT
         }
     }
 

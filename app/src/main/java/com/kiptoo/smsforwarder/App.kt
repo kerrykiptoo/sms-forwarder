@@ -10,8 +10,8 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        // Safety net: periodically retry the queue even if a one-shot was missed.
-        ForwardScheduler.schedulePeriodic(this)
+        // Safety nets: periodic flush, reconciliation sweep, and heartbeat.
+        ForwardScheduler.scheduleAll(this)
     }
 
     private fun createChannel() {
