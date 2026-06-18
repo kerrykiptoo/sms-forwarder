@@ -39,17 +39,18 @@ class ForwardWorker(
                 // 2xx: inserted or duplicate — it landed. Mark sent.
                 PostResult.LANDED -> dao.markSent(sms.id, System.currentTimeMillis())
                 // 400: malformed — retrying forever won't help. Dead-letter by
-                // marking sent so it leaves the queue (logged below). It will not
-                // re-enter via the sweep because the sweep skips messages we hold.
+                // marking sent so it leaves the active queue.
                 PostResult.DEAD_LETTER -> dao.markSent(sms.id, System.currentTimeMillis())
                 // 401: bad/inactive token — pause; merchant must fix the URL.
-                // Don't mark sent; let the queue hold until config is corrected.
                 PostResult.AUTH_FAIL -> anyRetryable = true
                 // 5xx / network: transient — retry with backoff.
                 PostResult.TRANSIENT -> anyRetryable = true
             }
         }
-        dao.purgeSent()
+
+        // Keep a small tail of sent rows so the health indicator and recent-
+        // activity list have data; older sent rows are trimmed away.
+        dao.trimSentHistory(SENT_HISTORY_KEEP)
 
         if (anyRetryable) Result.retry() else Result.success()
     }
@@ -91,5 +92,9 @@ class ForwardWorker(
         val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US)
         fmt.timeZone = TimeZone.getDefault()
         return fmt.format(Date(millis))
+    }
+
+    companion object {
+        private const val SENT_HISTORY_KEEP = 20
     }
 }

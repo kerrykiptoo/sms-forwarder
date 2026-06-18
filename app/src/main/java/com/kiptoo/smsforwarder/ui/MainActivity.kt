@@ -9,8 +9,13 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.Gravity
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +23,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.kiptoo.smsforwarder.Prefs
 import com.kiptoo.smsforwarder.data.AppDatabase
+import com.kiptoo.smsforwarder.data.SmsEntity
 import com.kiptoo.smsforwarder.databinding.ActivityMainBinding
 import com.kiptoo.smsforwarder.work.ForwardScheduler
 import kotlinx.coroutines.CoroutineScope
@@ -26,11 +32,22 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var prefs: Prefs
+
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val autoRefresh = object : Runnable {
+        override fun run() {
+            refreshStatus()
+            refreshHandler.postDelayed(this, AUTO_REFRESH_MS)
+        }
+    }
 
     private val requestPerms = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -52,12 +69,12 @@ class MainActivity : AppCompatActivity() {
             prefs.senderWhitelist = binding.etSenders.text.toString()
             prefs.deviceLabel = binding.etLabel.text.toString()
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
-            // Try flushing immediately in case messages were queued before config.
             ForwardScheduler.enqueueNow(applicationContext)
             refreshStatus()
         }
 
         binding.btnTest.setOnClickListener { testConnection() }
+        binding.btnRefresh.setOnClickListener { refreshStatus() }
         binding.btnGrant.setOnClickListener { requestSmsPerms() }
         binding.btnBattery.setOnClickListener { requestBatteryExemption() }
     }
@@ -65,6 +82,13 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshStatus()
+        // Live updates while the screen is open.
+        refreshHandler.postDelayed(autoRefresh, AUTO_REFRESH_MS)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        refreshHandler.removeCallbacks(autoRefresh)
     }
 
     private fun requestSmsPerms() {
@@ -143,6 +167,7 @@ class MainActivity : AppCompatActivity() {
             val dao = AppDatabase.get(applicationContext).smsDao()
             val count = withContext(Dispatchers.IO) { dao.pendingCount() }
             val lastSent = withContext(Dispatchers.IO) { dao.lastSentAt() }
+            val recent = withContext(Dispatchers.IO) { dao.recentActivity(5) }
 
             binding.tvQueue.text = "Pending in queue: $count"
 
@@ -150,8 +175,6 @@ class MainActivity : AppCompatActivity() {
             val syncText = if (lastSent == null) "never" else relativeAge(now - lastSent)
             binding.tvHealth.text = "Last sync: $syncText   Queue: $count pending"
 
-            // Dot color: green if recent sync & empty queue; amber if backed up or
-            // 30–60 min stale; red if no sync > 60 min.
             val minsSinceSync = if (lastSent == null) Long.MAX_VALUE else (now - lastSent) / 60000L
             val color = when {
                 lastSent != null && minsSinceSync < 30 && count == 0 -> GREEN
@@ -159,8 +182,53 @@ class MainActivity : AppCompatActivity() {
                 else -> AMBER
             }
             ImageViewCompat.setImageTintList(binding.ivStatusDot, ColorStateList.valueOf(color))
+
+            renderRecent(recent, now)
         }
     }
+
+    private fun renderRecent(rows: List<SmsEntity>, now: Long) {
+        val container = binding.recentContainer
+        container.removeAllViews()
+        if (rows.isEmpty()) {
+            container.addView(makeRow("No messages yet", ""))
+            return
+        }
+        for (r in rows) {
+            val whenMs = r.sentAt ?: r.receivedAt
+            val left = "${r.sender}  ·  ${clock(whenMs)}"
+            val right = if (r.sent) "sent" else "pending"
+            container.addView(makeRow(left, right, r.sent))
+        }
+    }
+
+    // A simple two-column row: left text + right status, no adapter needed.
+    private fun makeRow(left: String, right: String, sent: Boolean = true): LinearLayout {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setPadding(0, 8, 0, 8)
+        }
+        val l = TextView(this).apply {
+            text = left
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val rgt = TextView(this).apply {
+            text = right
+            gravity = Gravity.END
+            if (right == "sent") setTextColor(GREEN)
+            else if (right == "pending") setTextColor(AMBER)
+        }
+        row.addView(l)
+        row.addView(rgt)
+        return row
+    }
+
+    private fun clock(ms: Long): String =
+        SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(Date(ms))
 
     private fun relativeAge(ms: Long): String {
         val mins = ms / 60000L
@@ -173,6 +241,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        private const val AUTO_REFRESH_MS = 5000L
         private val GREEN = Color.parseColor("#2E7D32")
         private val AMBER = Color.parseColor("#F9A825")
         private val RED = Color.parseColor("#C62828")
