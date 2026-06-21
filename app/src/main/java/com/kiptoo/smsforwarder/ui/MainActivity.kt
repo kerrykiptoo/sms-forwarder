@@ -112,7 +112,7 @@ class MainActivity : AppCompatActivity() {
                 )
                 startActivity(intent)
             } else {
-                Toast.makeText(this, "Already exempt", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Already on", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -160,8 +160,8 @@ class MainActivity : AppCompatActivity() {
                 .isIgnoringBatteryOptimizations(packageName)
         } else true
 
-        binding.tvSmsStatus.text = if (smsOk) "SMS permission: granted" else "SMS permission: NOT granted"
-        binding.tvBattStatus.text = if (battOk) "Battery exemption: granted" else "Battery exemption: NOT granted"
+        binding.tvSmsStatus.text = if (smsOk) "Reading payment texts: On" else "Reading payment texts: Off"
+        binding.tvBattStatus.text = if (battOk) "Always-on: Enabled" else "Always-on: Disabled"
 
         CoroutineScope(Dispatchers.Main).launch {
             val dao = AppDatabase.get(applicationContext).smsDao()
@@ -169,11 +169,11 @@ class MainActivity : AppCompatActivity() {
             val lastSent = withContext(Dispatchers.IO) { dao.lastSentAt() }
             val recent = withContext(Dispatchers.IO) { dao.recentActivity(5) }
 
-            binding.tvQueue.text = "Pending in queue: $count"
+            binding.tvQueue.text = "Waiting to send: $count"
 
             val now = System.currentTimeMillis()
             val syncText = if (lastSent == null) "never" else relativeAge(now - lastSent)
-            binding.tvHealth.text = "Last sync: $syncText   Queue: $count pending"
+            binding.tvHealth.text = "Last sync: $syncText   ·   $count waiting"
 
             val minsSinceSync = if (lastSent == null) Long.MAX_VALUE else (now - lastSent) / 60000L
             val color = when {
@@ -214,6 +214,7 @@ class MainActivity : AppCompatActivity() {
         }
         val l = TextView(this).apply {
             text = left
+            setTextColor(INK)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         val rgt = TextView(this).apply {
@@ -242,8 +243,9 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val AUTO_REFRESH_MS = 5000L
-        private val GREEN = Color.parseColor("#2E7D32")
-        private val AMBER = Color.parseColor("#F9A825")
-        private val RED = Color.parseColor("#C62828")
+        private val INK   = Color.parseColor("#14140F")
+        private val GREEN = Color.parseColor("#0E5C4A")
+        private val AMBER = Color.parseColor("#B7791F")
+        private val RED   = Color.parseColor("#B23B2E")
     }
 }

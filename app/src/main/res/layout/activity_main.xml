@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -13,8 +14,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/app_name"
-            android:textSize="22sp"
-            android:textStyle="bold"
+            android:fontFamily="@font/syne_medium"
+            android:textSize="26sp"
+            android:textColor="@color/ink"
             android:paddingBottom="16dp" />
 
         <LinearLayout
@@ -37,31 +39,35 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Last sync: —   Queue: —" />
+                android:fontFamily="@font/dm_mono_regular"
+                android:textColor="@color/ink"
+                android:text="Last sync: —   ·   — waiting" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRefresh"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/teal"
                 android:text="Refresh" />
         </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Webhook URL">
+            android:hint="@string/hint_webhook">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etWebhook"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/dm_mono_regular"
                 android:inputType="textUri" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Sender whitelist (comma-separated, e.g. MPESA,Equity,KCB)">
+            android:hint="@string/hint_senders">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etSenders"
                 android:layout_width="match_parent"
@@ -72,7 +78,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Device label (optional, e.g. shop-01)">
+            android:hint="@string/hint_label">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etLabel"
                 android:layout_width="match_parent"
@@ -85,6 +91,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:backgroundTint="@color/teal"
+            android:textColor="@color/teal_on"
             android:text="Save" />
 
         <com.google.android.material.button.MaterialButton
@@ -99,19 +107,22 @@
             android:id="@+id/tvTestResult"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/ink"
             android:paddingTop="6dp" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginVertical="20dp"
-            android:background="?android:attr/listDivider" />
+            android:background="@color/hairline" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Recent activity"
-            android:textStyle="bold"
+            android:fontFamily="@font/syne_medium"
+            android:textColor="@color/ink"
+            android:textSize="15sp"
             android:paddingBottom="4dp" />
 
         <LinearLayout
@@ -125,12 +136,14 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginVertical="20dp"
-            android:background="?android:attr/listDivider" />
+            android:background="@color/hairline" />
 
         <TextView
             android:id="@+id/tvDeviceId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/dm_mono_regular"
+            android:textColor="@color/ink"
             android:paddingBottom="4dp"
             android:textIsSelectable="true" />
 
@@ -138,18 +151,22 @@
             android:id="@+id/tvSmsStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/ink"
             android:paddingBottom="4dp" />
 
         <TextView
             android:id="@+id/tvBattStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/ink"
             android:paddingBottom="4dp" />
 
         <TextView
             android:id="@+id/tvQueue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/dm_mono_regular"
+            android:textColor="@color/ink"
             android:paddingBottom="12dp" />
 
         <com.google.android.material.button.MaterialButton
@@ -157,7 +174,7 @@
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Grant SMS permission" />
+            android:text="@string/btn_grant" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBattery"
@@ -165,7 +182,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Disable battery optimization" />
+            android:text="@string/btn_battery" />
 
     </LinearLayout>
 </ScrollView>

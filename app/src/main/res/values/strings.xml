@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">SMS Forwarder</string>
+    <string name="app_name">Lumio</string>
+    <string name="hint_webhook">Webhook URL</string>
+    <string name="hint_senders">Which senders to capture (e.g. MPESA, KCB)</string>
+    <string name="hint_label">Name this device (optional)</string>
+    <string name="btn_grant">Allow Lumio to read payment texts</string>
+    <string name="btn_battery">Keep Lumio always running</string>
 </resources>

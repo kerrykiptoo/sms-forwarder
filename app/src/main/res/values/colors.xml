@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="paper">#FBF9F4</color>
+    <color name="ink">#14140F</color>
+    <color name="ink_muted">#80141A0F</color>
+    <color name="teal">#0E5C4A</color>
+    <color name="teal_on">#FBF9F4</color>
+    <color name="hairline">#1A14140F</color>
+    <color name="status_green">#0E5C4A</color>
+    <color name="status_amber">#B7791F</color>
+    <color name="status_red">#B23B2E</color>
+    <color name="field_stroke">#26141A0F</color>
+</resources>
