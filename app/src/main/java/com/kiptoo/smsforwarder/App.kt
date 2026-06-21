@@ -4,11 +4,14 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import androidx.appcompat.app.AppCompatDelegate
 import com.kiptoo.smsforwarder.work.ForwardScheduler
 
 class App : Application() {
     override fun onCreate() {
         super.onCreate()
+        // Lumio is always warm-paper light, regardless of the device's dark-mode setting.
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         createChannel()
         // Safety nets: periodic flush, reconciliation sweep, and heartbeat.
         ForwardScheduler.scheduleAll(this)
