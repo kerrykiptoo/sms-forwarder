@@ -9,6 +9,7 @@ import com.kiptoo.smsforwarder.data.AppDatabase
 import com.kiptoo.smsforwarder.data.SmsEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.kiptoo.smsforwarder.SenderMatcher
 
 /**
  * Reconciliation sweep (docs/04-reliability.md, Defense 1).
