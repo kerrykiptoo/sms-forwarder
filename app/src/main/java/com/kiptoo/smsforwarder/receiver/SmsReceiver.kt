@@ -30,15 +30,8 @@ class SmsReceiver : BroadcastReceiver() {
         val whitelist = prefs.whitelistSet()
         // Punctuation-tolerant match: "M-PESA" normalizes to "mpesa" so it matches "mpesa".
         // Empty whitelist = forward all senders.
-        val normalizedSender = sender.lowercase().filter { it.isLetterOrDigit() }
-        if (whitelist.isNotEmpty() &&
-            whitelist.none { entry ->
-                val e = entry.filter { it.isLetterOrDigit() }
-                e.isNotEmpty() && normalizedSender.contains(e)
-            }
-        ) {
-            return
-        }
+        // Empty whitelist = forward all (realtime path). Otherwise use the shared matcher.
+        if (whitelist.isNotEmpty() && !SenderMatcher.matches(sender, whitelist)) return
 
         val appContext = context.applicationContext
         val pending = goAsync()

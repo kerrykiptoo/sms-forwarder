@@ -45,7 +45,7 @@ class SweepWorker(
 
         val recovered = try {
             scanInbox(since).count { msg ->
-                if (!whitelist.contains(msg.sender.lowercase())) return@count false
+                if (!SenderMatcher.matches(msg.sender, whitelist)) return@count false
                 // Already held (pending or sent)? Skip — re-inserting risks a dupe.
                 val already = dao.existsByTimestampBody(msg.smsTimestamp, msg.body)
                 if (already > 0) return@count false
